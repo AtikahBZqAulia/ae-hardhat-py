@@ -1,6 +1,7 @@
 def rbmhidlinear(BATCH_DATA, RESTART, NUM_HID, NUM_DIMS, MAX_EPOCH):
     import scipy.io as sio
     import numpy as np
+    import matplotlib.pyplot as plt
 
     EPSILON_W = 0.001
     EPSILON_VB = 0.001
@@ -17,7 +18,6 @@ def rbmhidlinear(BATCH_DATA, RESTART, NUM_HID, NUM_DIMS, MAX_EPOCH):
         EPOCH = 0
 
         VISHID = 0.1 * np.random.randn(NUM_DIMS, NUM_HID)
-        # VISHID = sio.loadmat("vis_pre4.mat", verify_compressed_data_integrity=False)['vishid_']
         HIDBIASES = np.zeros(NUM_HID)
         VISBIASES = np.zeros(NUM_DIMS)
         POSHIDPROBS = np.zeros((NUM_CASES, NUM_HID))
@@ -28,7 +28,7 @@ def rbmhidlinear(BATCH_DATA, RESTART, NUM_HID, NUM_DIMS, MAX_EPOCH):
         HIDBIASINC = np.zeros(NUM_HID)
         VISBIASINC = np.zeros(NUM_DIMS)
         BATCHPOSHIDPROBS = np.zeros((NUM_CASES, NUM_HID, NUM_BATCHES))
-
+    LST_ERR = []
     for epoch in range(EPOCH, MAX_EPOCH):
         print('epoch {}'.format(epoch))
         ERR_SUM = 0
@@ -66,5 +66,10 @@ def rbmhidlinear(BATCH_DATA, RESTART, NUM_HID, NUM_DIMS, MAX_EPOCH):
             VISBIASES += VISBIASINC
             HIDBIASES += HIDBIASINC
         print('epoch {} error {}'.format(epoch, ERR_SUM))
+        LST_ERR.append(ERR_SUM)
+    plt.plot(LST_ERR)
+    plt.ylabel('Mean Squared Error (MSE)')
+    plt.xlabel('Epoch')
+    plt.show()
     return VISHID, HIDBIASES, VISBIASES
 
