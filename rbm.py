@@ -1,6 +1,7 @@
 def rbm(BATCH_DATA, RESTART, NUM_HID, NUM_DIMS, MAX_EPOCH):
     import scipy.io as sio
     import numpy as np
+    import matplotlib.pyplot as plt
 
     EPSILON_W = 0.1
     EPSILON_VB = 0.1
@@ -27,44 +28,48 @@ def rbm(BATCH_DATA, RESTART, NUM_HID, NUM_DIMS, MAX_EPOCH):
         HIDBIASINC = np.zeros(NUM_HID)
         VISBIASINC = np.zeros(NUM_DIMS)
         BATCHPOSHIDPROBS = np.zeros((NUM_CASES, NUM_HID, NUM_BATCHES))
-
+    LST_ERR = []
     for epoch in range(EPOCH, MAX_EPOCH):
         print('epoch {}'.format(epoch))
         ERR_SUM = 0
-        for batch in range(NUM_BATCHES):
-            print('epoch {} batch {}'.format(epoch,batch))
-            
-            data = BATCH_DATA[:,:,batch]
+        batch = 0
+        
+        data = BATCH_DATA[:,:,0]
 
-            POSHIDPROBS = 1.0/(1 + (np.exp(np.matmul(-data,VISHID)- np.tile(HIDBIASES, (NUM_CASES, 1)))))
-            BATCHPOSHIDPROBS[:,:,batch] = POSHIDPROBS
-            POSPRODS = np.matmul(data.T,POSHIDPROBS)
-            POSHIDACT = np.sum(POSHIDPROBS, axis=0)
-            POSVISACT = np.sum(data, axis=0)
+        POSHIDPROBS = 1.0/(1 + (np.exp(np.matmul(-data,VISHID)- np.tile(HIDBIASES, (NUM_CASES, 1)))))
+        BATCHPOSHIDPROBS[:,:,batch] = POSHIDPROBS
+        POSPRODS = np.matmul(data.T,POSHIDPROBS)
+        POSHIDACT = np.sum(POSHIDPROBS, axis=0)
+        POSVISACT = np.sum(data, axis=0)
 
-            POSHIDSTATES = POSHIDPROBS > np.random.rand(NUM_CASES, NUM_HID)
-            POSHIDSTATES = np.where(POSHIDSTATES, 1, 0)
+        POSHIDSTATES = POSHIDPROBS > np.random.rand(NUM_CASES, NUM_HID)
+        POSHIDSTATES = np.where(POSHIDSTATES, 1, 0)
 
-            NEGDATA = 1.0/(1 + np.exp(np.matmul(-POSHIDSTATES, VISHID.T) - np.tile(VISBIASES, (NUM_CASES, 1))))
-            NEGHIDPROBS = 1.0/(1 + np.exp(np.matmul(-NEGDATA, VISHID) - np.tile(HIDBIASES, (NUM_CASES,1))))
-            NEGPRODS = np.matmul(NEGDATA.T, NEGHIDPROBS)
-            NEGHIDACT = np.sum(NEGHIDPROBS, axis=0)
-            NEGVISACT = np.sum(NEGDATA, axis=0)
+        NEGDATA = 1.0/(1 + np.exp(np.matmul(-POSHIDSTATES, VISHID.T) - np.tile(VISBIASES, (NUM_CASES, 1))))
+        NEGHIDPROBS = 1.0/(1 + np.exp(np.matmul(-NEGDATA, VISHID) - np.tile(HIDBIASES, (NUM_CASES,1))))
+        NEGPRODS = np.matmul(NEGDATA.T, NEGHIDPROBS)
+        NEGHIDACT = np.sum(NEGHIDPROBS, axis=0)
+        NEGVISACT = np.sum(NEGDATA, axis=0)
 
-            ERR = np.sum(np.sum(np.square(data-NEGDATA), axis=0), axis=0)
-            ERR_SUM += ERR
+        ERR = np.sum(np.sum(np.square(data-NEGDATA), axis=0), axis=0)
+        ERR_SUM += ERR
 
-            if epoch>5:
-                MOMENTUM = FINAL_MOMENTUM
-            else:
-                MOMENTUM = INITIAL_MOMENTUM
+        if epoch>5:
+            MOMENTUM = FINAL_MOMENTUM
+        else:
+            MOMENTUM = INITIAL_MOMENTUM
 
-            VISHIDINC = MOMENTUM* VISHIDINC + EPSILON_W  * ((POSPRODS-NEGPRODS)/NUM_CASES - WEIGHT_COST*VISHID)
-            VISBIASINC = MOMENTUM* VISBIASINC + (EPSILON_VB/NUM_CASES) *(POSVISACT-NEGVISACT)
-            HIDBIASINC = MOMENTUM * HIDBIASINC + (EPSILON_HB/NUM_CASES)* (POSHIDACT-NEGHIDACT)
-            VISHID += VISHIDINC
-            VISBIASES += VISBIASINC
-            HIDBIASES += HIDBIASINC
+        VISHIDINC = MOMENTUM* VISHIDINC + EPSILON_W  * ((POSPRODS-NEGPRODS)/NUM_CASES - WEIGHT_COST*VISHID)
+        VISBIASINC = MOMENTUM* VISBIASINC + (EPSILON_VB/NUM_CASES) *(POSVISACT-NEGVISACT)
+        HIDBIASINC = MOMENTUM * HIDBIASINC + (EPSILON_HB/NUM_CASES)* (POSHIDACT-NEGHIDACT)
+        VISHID += VISHIDINC
+        VISBIASES += VISBIASINC
+        HIDBIASES += HIDBIASINC
         print('epoch {} error {}'.format(epoch, ERR_SUM))
+        LST_ERR.append(ERR_SUM)
+    plt.plot(LST_ERR)
+    plt.ylabel('Mean Squared Error (MSE)')
+    plt.xlabel('Epoch')
+    plt.show()
     return BATCHPOSHIDPROBS, VISHID, HIDBIASES, VISBIASES
 
