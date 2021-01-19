@@ -1,7 +1,7 @@
 def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENRECBIASES4, PENRECBIASES5, PENRECBIASES6, HIDRECBIASES, HIDPEN, HIDPEN2, HIDPEN3, HIDPEN4, HIDPEN5, HIDPEN6, HIDGENBIASES, HIDGENBIASES2, HIDGENBIASES3, HIDGENBIASES4, HIDGENBIASES5, HIDGENBIASES6, HIDTOP, TOPRECBIASES, TOPGENBIASES):
-# def backprop():
     import numpy as np
     import scipy.io as sio
+    import scipy.optimize as sciop
     from makebatches import makebatches
     from mnistdisp import mnistdisp
     from minimize import minimize
@@ -15,18 +15,15 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
     print('60 batches of 1000 cases each.')
 
     # file input dataset training
-    # path = "C:/Users/LENOVO/Downloads/data"
     path = "C:/Users/LENOVO/Downloads/data75"
     directory = os.listdir(path)   
 
     def get_dataset(filename):
         frame = cv.imread(path+'/'+filename)
-        # height, width, channels = frame.shape
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         return frame, gray
 
     BATCH_DATA = np.empty([0, 5625])
-    # BATCH_DATA = np.empty([0, 784])
     i= 1
     for filename in directory:
         print(str(i) + "----- " +filename)
@@ -34,20 +31,18 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
         BATCH_DATA = np.append(BATCH_DATA, np.ndarray.flatten(gray).reshape(1, -1), axis=0)
         i+=1
     BATCH_DATA = np.reshape(BATCH_DATA, BATCH_DATA.shape + (1,))
+    BATCH_DATA/=255.0
     NUM_CASES, NUM_DIMS, NUM_BATCHES = BATCH_DATA.shape
 
     # file input dataset testing
-    # test_path = "C:/Users/LENOVO/Downloads/datatest"
     test_path = "C:/Users/LENOVO/Downloads/data75test"
     test_dir = os.listdir(test_path)   
 
     def get_dataset_test(filename):
         frame = cv.imread(test_path+'/'+filename)
-        # height, width, channels = frame.shape
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         return frame, gray
 
-    # TEST_BATCH_DATA = np.empty([0, 784])
     TEST_BATCH_DATA = np.empty([0, 5625])
     i= 1
     for filename in test_dir:
@@ -56,6 +51,7 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
         TEST_BATCH_DATA = np.append(TEST_BATCH_DATA, np.ndarray.flatten(gray).reshape(1, -1), axis=0)
         i+=1
     TEST_BATCH_DATA = np.reshape(TEST_BATCH_DATA, TEST_BATCH_DATA.shape + (1,))
+    TEST_BATCH_DATA/=255.0
     
     W1 = np.append(VISHID, HIDRECBIASES.reshape(1, -1), axis = 0)
     W2 = np.append(HIDPEN, PENRECBIASES.reshape(1, -1), axis = 0)
@@ -98,9 +94,6 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
     for epoch in range(1, MAX_EPOCH):
         ERR = 0
         NUM_CASES, NUM_DIMS, NUM_BATCHES = BATCH_DATA.shape
-        print(NUM_CASES)
-        print(NUM_DIMS)
-        print(NUM_BATCHES)
         N = NUM_CASES
         for batch in range(0, NUM_BATCHES):
             data = BATCH_DATA[:,:,batch]
@@ -121,8 +114,8 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
             W7_PROBS = 1.0/(1 + np.exp(np.matmul(-W6_PROBS,W7)))
             W7_PROBS = np.append(W7_PROBS, np.ones((N, 1)), axis=1)
 
-            W8_PROBS = np.matmul(W7_PROBS, W8)
-            W8_PROBS = np.append(W8_PROBS, np.ones((N, 1)), axis=1)
+            W8_PROBS_TRAIN = np.matmul(W7_PROBS, W8)
+            W8_PROBS = np.append(W8_PROBS_TRAIN, np.ones((N, 1)), axis=1)
 
             W9_PROBS = 1.0/(1 + np.exp(np.matmul(-W8_PROBS,W9)))
             W9_PROBS = np.append(W9_PROBS, np.ones((N, 1)), axis=1)
@@ -142,15 +135,11 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
             ERR += 1/N*np.sum(np.sum(np.square(data[:,:-1]-DATAOUT), axis=0), axis=0)
         TRAIN_ERR = ERR/NUM_BATCHES
 
-        print('Displaying in figure 1: Top row - real data, Bottom row -- reconstructions')
         OUTPUT = np.array([])
         for ii in range(15):
             A = np.append(data[ii, :-1].T, DATAOUT[ii, :].T)
-            # A = A.reshape(784, 2)
             A = A.reshape(5625, 2)
             OUTPUT = np.append(OUTPUT, A)
-        # mnistdisp(OUTPUT)
-        # plt.show()
 
         TESTNUMCASES, TESTNUMDIMS, TESTNUMBATCHES = TEST_BATCH_DATA.shape
         N = TESTNUMCASES
@@ -174,8 +163,8 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
             W7_PROBS = 1.0/(1 + np.exp(np.matmul(-W6_PROBS,W7)))
             W7_PROBS = np.append(W7_PROBS, np.ones((N, 1)), axis=1)
 
-            W8_PROBS = np.matmul(W7_PROBS, W8)
-            W8_PROBS = np.append(W8_PROBS, np.ones((N, 1)), axis=1)
+            W8_PROBS_TEST = np.matmul(W7_PROBS, W8)
+            W8_PROBS = np.append(W8_PROBS_TEST, np.ones((N, 1)), axis=1)
 
             W9_PROBS = 1.0/(1 + np.exp(np.matmul(-W8_PROBS,W9)))
             W9_PROBS = np.append(W9_PROBS, np.ones((N, 1)), axis=1)
@@ -197,13 +186,8 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
         print('Before epoch {} Train squared error: {} Test squared error: {}'.format(epoch,TRAIN_ERR,TEST_ERR))
 
         TT = 0
-        # for batch in range(int(NUM_BATCHES/10)):
-        # print('epoch {} batch {}'.format(epoch,batch))
         TT+=1
         data=np.empty((81,5625), int)
-        # data=np.empty((75 ,784), int)
-        # for kk in range(10):
-        #     data = np.append(data, BATCH_DATA[:,:,((TT-1)*10+kk)], axis=0)
             
         MAX_ITER = 3
         VV = np.concatenate((W1.reshape(1,-1), W2.reshape(1,-1), W3.reshape(1,-1),
@@ -214,7 +198,7 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
         DIM = np.array([L1, L2, L3, L4, L5, L6, L7, L8, L9, L10, L11, L12, L13, L14, L15, L16, L17]).reshape(1, -1).T
 
         f, df = CG_MNIST(VV, DIM, data)
-        X, fX, i = minimize(VV,f, df, MAX_ITER, DIM, data, 1.0, True) 
+        X, fX, i = minimize(VV, f, df, MAX_ITER, DIM, data)
 
         W1 = X[0][0:(L1+1)*L2].reshape(L1+1,L2)
         X3 = (L1+1)*L2
@@ -249,7 +233,3 @@ def backprop(VISHID, VISBIASES, PENRECBIASES, PENRECBIASES2, PENRECBIASES3, PENR
         X3 = X3+(L15+1)*L16
         W16 = X[0][X3:X3+(L16+1)*L17].reshape(L16+1, L17)
     return ERR
-
-
-# if __name__ == "__main__":
-#     backprop()
