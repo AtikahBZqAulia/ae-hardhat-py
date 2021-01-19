@@ -96,13 +96,13 @@ def minimize(X, f0, df0, length, dim, data, red=1.0, verbose=True):
 
         if abs(d3) < -SIG*d0 and f3 < f0+x3*RHO*d0:  # if line search succeeded
             X = X+x3*s; f0 = f3; fX.append(f0)               # update variables
-            if verbose: print('%s %6i;  Value %4.6e\r' % (S, i, f0))
-            s = (dot(df3,df3)-dot(df0,df3))/dot(df0,df0)*s - df3
+            if verbose: print('%s %6i;  Value %4.6e\r' % (s, i, f0))
+            s = (dot(df3,df3.T)-dot(df0,df3.T))/dot(df0,df0.T)*s - df3
                                                   # Polack-Ribiere CG direction
             df0 = df3                                        # swap derivatives
-            d3 = d0; d0 = dot(df0,s)
+            d3 = d0; d0 = dot(df0,s.T)
             if d0 > 0:                             # new slope must be negative
-                s = -df0; d0 = -dot(s,s)     # otherwise use steepest direction
+                s = -df0; d0 = -dot(s,s.T)     # otherwise use steepest direction
             x3 = x3 * min(RATIO, d3/(d0-SMALL))     # slope ratio but max RATIO
             ls_failed = 0                       # this line search did not fail
         else:
