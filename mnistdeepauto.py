@@ -23,25 +23,22 @@ NUMPEN2 = 250
 NUMOPEN = 30
 
 # file input
-# path = "C:/Users/LENOVO/Downloads/data"
 path = "C:/Users/LENOVO/Downloads/data75"
 directory = os.listdir(path)   
 
 def get_dataset(filename):
     frame = cv.imread(path+'/'+filename)
-    # height, width, channels = frame.shape
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     return frame, gray
 
 BATCH_DATA = np.empty([0, 5625])
-# BATCH_DATA = np.empty([0, 784])
 i= 1
 for filename in directory:
-    print(str(i) + "----- " +filename)
     frame, gray = get_dataset(filename)
     BATCH_DATA = np.append(BATCH_DATA, np.ndarray.flatten(gray).reshape(1, -1), axis=0)
     i+=1
 BATCH_DATA = np.reshape(BATCH_DATA, BATCH_DATA.shape + (1,))
+BATCH_DATA/=255.0
 NUM_CASES, NUM_DIMS, NUM_BATCHES = BATCH_DATA.shape
 
 print('Pretraining Layer 1 with RBM: {}-{}'.format(NUM_DIMS, NUMHID))
@@ -115,7 +112,6 @@ VISHID, HIDBIASES, VISBIASES = rbmhidlinear(BATCH_DATA, RESTART, NUM_HID, NUM_DI
 HIDTOP = VISHID
 TOPRECBIASES = HIDBIASES
 TOPGENBIASES = VISBIASES
-# epoch 10 : 5611.xxx; epoch 100 : 58.9; epoch 200  : 21,xxx; epoch 500: 6.59
 
 print('END of Pretraining Layer 4 with RBM: {}-{}'.format(NUMPEN2, NUMOPEN))
 
